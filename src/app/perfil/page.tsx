@@ -321,7 +321,7 @@ const ProfileEdit = () => {
               asChild
               className="bg-psiecode-light-blue hover:bg-psiecode-medium-blue w-full"
             >
-              <Link href="/perfil/2fa">Configurar 2FA</Link>
+              <Link href="/twoFactorSecurity">Configurar 2FA</Link>
             </Button>
           </CardContent>
         </Card>

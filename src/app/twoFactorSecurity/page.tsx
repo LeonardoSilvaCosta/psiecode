@@ -1,16 +1,35 @@
+"use client";
+
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { showError, showSuccess, showLoading, dismissToast } from "@/utils/toast";
-import QRCode from "react-qr-code"; // Importando QRCode do novo pacote
-import { useNavigate } from "react-router-dom";
+import { showError, showSuccess } from "@/utils/toast";
+import QRCode from "react-qr-code";
+import { useRouter } from "next/navigation";
+import { User } from "@supabase/supabase-js";
+
+interface MFAError {
+  message: string;
+}
+
+interface MFASecretResponse {
+  secret: string;
+}
+
+interface MFAOTPResponse {
+  otp_url: string;
+}
+
+interface UserWithMFA extends User {
+  mfa_enabled?: boolean;
+}
 
 const TwoFactorSetup = () => {
   const { user } = useAuth();
-  const navigate = useNavigate();
+  const router = useRouter();
 
   const [otpUrl, setOtpUrl] = useState<string | null>(null);
   const [secret, setSecret] = useState<string | null>(null);
@@ -25,31 +44,40 @@ const TwoFactorSetup = () => {
       setIsLoading(true);
       try {
         // Verifica se 2FA já está habilitado
-        const { data: userData, error: userError } = await supabase.auth.getUser();
+        const { data: userData, error: userError } =
+          await supabase.auth.getUser();
         if (userError) throw userError;
-        if (userData.user?.mfa_enabled) {
+
+        const userWithMFA = userData.user as UserWithMFA;
+        if (userWithMFA?.mfa_enabled) {
           setIsEnabled(true);
           setIsLoading(false);
           return; // Sai se já estiver habilitado
         }
 
         // Se não estiver habilitado, gera o segredo e o QR code
-        const { data: secretData, error: secretError } = await supabase.rpc('auth.mfa_generate_secret');
+        const { data: secretData, error: secretError } = await supabase.rpc(
+          "auth.mfa_generate_secret"
+        );
         if (secretError) throw secretError;
-        if (!secretData) throw new Error("Não foi possível gerar o segredo 2FA.");
+        if (!secretData)
+          throw new Error("Não foi possível gerar o segredo 2FA.");
 
-        const secretValue = (secretData as any).secret;
+        const secretValue = (secretData as MFASecretResponse).secret;
         setSecret(secretValue);
 
-        const { data: otpData, error: otpError } = await supabase.rpc('auth.mfa_generate_totp', { secret: secretValue });
+        const { data: otpData, error: otpError } = await supabase.rpc(
+          "auth.mfa_generate_totp",
+          { secret: secretValue }
+        );
         if (otpError) throw otpError;
         if (!otpData) throw new Error("Não foi possível gerar o QR code 2FA.");
 
-        const otpUrlValue = (otpData as any).otp_url;
+        const otpUrlValue = (otpData as MFAOTPResponse).otp_url;
         setOtpUrl(otpUrlValue);
-
-      } catch (error: any) {
-        showError(error.message || "Erro ao carregar configuração 2FA.");
+      } catch (error) {
+        const err = error as MFAError;
+        showError(err.message || "Erro ao carregar configuração 2FA.");
       } finally {
         setIsLoading(false);
       }
@@ -64,24 +92,25 @@ const TwoFactorSetup = () => {
       return;
     }
     if (!secret) {
-       showError("Segredo 2FA não gerado. Tente recarregar a página.");
-       return;
+      showError("Segredo 2FA não gerado. Tente recarregar a página.");
+      return;
     }
 
     setIsLoading(true);
-    const toastId = showLoading("Confirmando código 2FA...");
     try {
-      const { data, error } = await supabase.rpc('auth.mfa_totp_enable', { code, secret });
+      const { error } = await supabase.rpc("auth.mfa_totp_enable", {
+        code,
+        secret,
+      });
       if (error) throw error;
       showSuccess("Autenticação de dois fatores ativada com sucesso!");
       setIsEnabled(true);
       setCode("");
-      // O ideal seria recarregar o usuário no AuthContext ou navegar para o perfil
-      navigate("/perfil");
-    } catch (error: any) {
-      showError(error.message || "Código inválido. Tente novamente.");
+      router.push("/perfil");
+    } catch (error) {
+      const err = error as MFAError;
+      showError(err.message || "Código inválido. Tente novamente.");
     } finally {
-      dismissToast(toastId);
       setIsLoading(false);
     }
   };
@@ -89,8 +118,11 @@ const TwoFactorSetup = () => {
   if (!user) {
     return (
       <div className="container mx-auto py-12 px-6 text-center">
-        <p>Você precisa estar logado para configurar a autenticação de dois fatores.</p>
-        <Button onClick={() => navigate("/login")} className="mt-4">
+        <p>
+          Você precisa estar logado para configurar a autenticação de dois
+          fatores.
+        </p>
+        <Button onClick={() => router.push("/login")} className="mt-4">
           Fazer Login
         </Button>
       </div>
@@ -99,16 +131,23 @@ const TwoFactorSetup = () => {
 
   return (
     <div className="container mx-auto py-12 px-6 max-w-md">
-      <h1 className="text-3xl font-bold text-psiecode-dark-blue mb-6">Configurar Autenticação de Dois Fatores (2FA)</h1>
+      <h1 className="text-3xl font-bold text-psiecode-dark-blue mb-6">
+        Configurar Autenticação de Dois Fatores (2FA)
+      </h1>
 
       {isLoading ? (
-         <p className="text-center text-psiecode-medium-blue">Carregando configuração 2FA...</p>
+        <p className="text-center text-psiecode-medium-blue">
+          Carregando configuração 2FA...
+        </p>
       ) : isEnabled ? (
-        <p className="text-green-600 font-semibold mb-4 text-center">2FA já está ativado na sua conta.</p>
+        <p className="text-green-600 font-semibold mb-4 text-center">
+          2FA já está ativado na sua conta.
+        </p>
       ) : (
         <>
           <p className="mb-4 text-psiecode-medium-blue">
-            Escaneie o QR code abaixo com seu aplicativo autenticador (Google Authenticator, Authy, etc) ou insira a chave secreta manualmente.
+            Escaneie o QR code abaixo com seu aplicativo autenticador (Google
+            Authenticator, Authy, etc) ou insira a chave secreta manualmente.
           </p>
 
           {otpUrl ? (
@@ -122,7 +161,11 @@ const TwoFactorSetup = () => {
           {secret && (
             <div className="mb-6">
               <Label>Chave secreta (para digitar manualmente):</Label>
-              <Input value={secret} readOnly className="select-all bg-gray-100" />
+              <Input
+                value={secret}
+                readOnly
+                className="select-all bg-gray-100"
+              />
             </div>
           )}
 
@@ -139,7 +182,11 @@ const TwoFactorSetup = () => {
             />
           </div>
 
-          <Button onClick={handleConfirm} disabled={isLoading || code.length !== 6 || !secret} className="w-full bg-psiecode-light-blue hover:bg-psiecode-medium-blue text-white">
+          <Button
+            onClick={handleConfirm}
+            disabled={isLoading || code.length !== 6 || !secret}
+            className="w-full bg-psiecode-light-blue hover:bg-psiecode-medium-blue text-white"
+          >
             {isLoading ? "Confirmando..." : "Ativar 2FA"}
           </Button>
         </>
