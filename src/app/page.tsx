@@ -1,103 +1,123 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { Button } from "@/components/ui/button";
+import { ArrowRight, CheckCircle } from "lucide-react";
+import Link from "next/link";
+import { useAuth } from "@/contexts/AuthContext"; // Importar useAuth
+
+const Home = () => {
+  const { user, isLoading } = useAuth(); // Obter usuário e estado de carregamento
+
+  // Determinar o link do CTA "Comece Agora"
+  // Se isLoading for true, podemos assumir que o usuário não está logado para evitar um flash
+  // ou aguardar a resolução. Por simplicidade, vamos tratar isLoading como deslogado para este link.
+  const comeceAgoraLink = !isLoading && user ? "/dashboard" : "/cadastro";
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <div className="bg-white text-psiecode-dark-blue">
+      {/* Hero Section */}
+      <section className="py-20 md:py-32 bg-gradient-to-br from-psiecode-light-blue/10 via-white to-psiecode-cyan/10">
+        <div className="container mx-auto px-6 text-center">
+          <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
+            Transforme sua prática com{" "}
+            <span className="text-psiecode-light-blue">Psiecode</span>
+          </h1>
+          <p className="text-lg md:text-xl text-psiecode-medium-blue mb-10 max-w-2xl mx-auto">
+            A plataforma completa com ferramentas tecnológicas pensadas para
+            facilitar a vida de psicólogos. Mais tempo para seus pacientes,
+            menos tempo com burocracia.
+          </p>
+          <div className="space-x-4">
+            <Button
+              size="lg"
+              className="bg-psiecode-light-blue text-white hover:bg-psiecode-medium-blue px-8 py-3 text-lg"
+              asChild
+            >
+              <Link href={comeceAgoraLink}>
+                Comece Agora <ArrowRight className="ml-2 h-5 w-5" />
+              </Link>
+            </Button>
+            <Button
+              size="lg"
+              variant="outline"
+              className="border-psiecode-light-blue text-psiecode-light-blue hover:bg-psiecode-light-blue hover:text-white px-8 py-3 text-lg"
+              asChild
+            >
+              <Link href="/servicos">Saiba Mais</Link>
+            </Button>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      </section>
+
+      {/* Benefits Section */}
+      <section className="py-16 md:py-24">
+        <div className="container mx-auto px-6">
+          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
+            Por que escolher a Psiecode?
+          </h2>
+          <div className="grid md:grid-cols-3 gap-8 text-center">
+            {[
+              {
+                title: "Agenda Inteligente",
+                description:
+                  "Organize seus agendamentos de forma fácil e intuitiva.",
+                icon: (
+                  <CheckCircle className="h-12 w-12 text-psiecode-cyan mx-auto mb-4" />
+                ),
+              },
+              {
+                title: "Prontuário Digital Seguro",
+                description:
+                  "Acesse os prontuários dos seus pacientes com segurança e praticidade.",
+                icon: (
+                  <CheckCircle className="h-12 w-12 text-psiecode-cyan mx-auto mb-4" />
+                ),
+              },
+              {
+                title: "Relatórios Simplificados",
+                description:
+                  "Gere relatórios completos com poucos cliques, otimizando seu tempo.",
+                icon: (
+                  <CheckCircle className="h-12 w-12 text-psiecode-cyan mx-auto mb-4" />
+                ),
+              },
+            ].map((benefit) => (
+              <div
+                key={benefit.title}
+                className="p-6 bg-gray-50 rounded-lg shadow-sm hover:shadow-lg transition-shadow"
+              >
+                {benefit.icon}
+                <h3 className="text-xl font-semibold mb-2">{benefit.title}</h3>
+                <p className="text-psiecode-medium-blue">
+                  {benefit.description}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Call to Action Section */}
+      <section className="py-16 md:py-24 bg-psiecode-dark-blue text-white">
+        <div className="container mx-auto px-6 text-center">
+          <h2 className="text-3xl md:text-4xl font-bold mb-6">
+            Pronto para simplificar sua rotina?
+          </h2>
+          <p className="text-lg md:text-xl text-gray-300 mb-10 max-w-xl mx-auto">
+            Junte-se a centenas de psicólogos que já estão otimizando suas
+            práticas com a Psiecode.
+          </p>
+          <Button
+            size="lg"
+            className="bg-psiecode-light-blue text-white hover:bg-psiecode-medium-blue px-10 py-4 text-xl"
+            asChild
+          >
+            <Link href="/precos">Ver Planos e Preços</Link>
+          </Button>
+        </div>
+      </section>
     </div>
   );
-}
+};
+
+export default Home;
