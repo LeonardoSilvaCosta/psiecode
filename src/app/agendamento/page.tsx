@@ -1,16 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/lib/supabaseClient";
-import {
-  showError,
-  showSuccess,
-  showLoading,
-  dismissToast,
-} from "@/utils/toast";
+import { showError, showSuccess } from "@/utils/toast";
 import {
   format,
   startOfDay,
@@ -20,60 +12,56 @@ import {
   parseISO,
   isValid,
 } from "date-fns";
-import { PlusCircle, Edit3, Trash2, ArrowLeft } from "lucide-react";
+import { ptBR } from "date-fns/locale";
+import { CalendarDays, PlusCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-
+import { CustomCalendar as Calendar } from "@/components/calendar/CustomCalendar";
+import { AppointmentModal } from "@/components/appointments/AppointmentModal";
+import { TimeSlot } from "@/components/appointments/TimeSlot";
+import { AppointmentHeader } from "@/components/appointments/AppointmentHeader";
+import type {
+  TimeSlot as TimeSlotType,
+  PeriodLabels,
+  Patient,
+  Appointment,
+} from "@/components/appointments/types";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  fetchAppointmentsByDate,
+  createAppointment,
+  updateAppointment,
+  deleteAppointment,
+  fetchPatients,
+} from "@/queries";
 
-interface Patient {
-  id: string;
-  fullname: string;
-}
-
-interface Appointment {
-  id: string;
-  patient_id: string;
-  appointment_datetime: string;
-  duration_minutes?: number;
-  notes?: string;
-  tb_patients?: Patient;
-}
-
-const timeSlots = [
-  "08:00",
-  "09:00",
-  "10:00",
-  "11:00",
-  "12:00",
-  "13:00",
-  "14:00",
-  "15:00",
-  "16:00",
-  "17:00",
-  "18:00",
+const timeSlots: TimeSlotType[] = [
+  { time: "07:00", period: "morning" },
+  { time: "08:00", period: "morning" },
+  { time: "09:00", period: "morning" },
+  { time: "10:00", period: "morning", peak: true },
+  { time: "11:00", period: "morning", peak: true },
+  { time: "12:00", period: "afternoon" },
+  { time: "13:00", period: "afternoon" },
+  { time: "14:00", period: "afternoon", peak: true },
+  { time: "15:00", period: "afternoon", peak: true },
+  { time: "16:00", period: "afternoon" },
+  { time: "17:00", period: "afternoon" },
+  { time: "18:00", period: "evening" },
+  { time: "19:00", period: "evening", peak: true },
+  { time: "20:00", period: "evening", peak: true },
+  { time: "21:00", period: "evening" },
+  { time: "22:00", period: "evening" },
 ];
+
+const periodLabels: PeriodLabels = {
+  morning: "Manhã",
+  afternoon: "Tarde",
+  evening: "Noite",
+};
 
 const Agendamento = () => {
   const { user } = useAuth();
-  const router = useRouter();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(
     new Date()
   );
@@ -85,7 +73,6 @@ const Agendamento = () => {
   const [currentAppointment, setCurrentAppointment] = useState<
     Partial<Appointment>
   >({});
-
   const [selectedPatientId, setSelectedPatientId] = useState<
     string | undefined
   >(undefined);
@@ -93,18 +80,12 @@ const Agendamento = () => {
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const fetchPatients = useCallback(async () => {
+  const fetchPatientsData = useCallback(async () => {
     if (!user) return;
     setIsLoadingPatients(true);
     try {
-      const { data, error } = await supabase
-        .from("tb_patients")
-        .select("id, fullname")
-        .eq("user_id", user.id)
-        .order("fullname", { ascending: true });
-
-      if (error) throw error;
-      setPatients(data || []);
+      const data = await fetchPatients(user.id);
+      setPatients(data);
     } catch (error: unknown) {
       let errorMessage = "Erro desconhecido ao buscar pacientes";
       if (error instanceof Error) {
@@ -117,45 +98,13 @@ const Agendamento = () => {
     }
   }, [user]);
 
-  const fetchAppointments = useCallback(
+  const fetchAppointmentsData = useCallback(
     async (date: Date) => {
       if (!user || !date) return;
       setIsLoadingAppointments(true);
       try {
-        const startDate = format(startOfDay(date), "yyyy-MM-dd'T'HH:mm:ssxxx");
-        const endDate = format(endOfDay(date), "yyyy-MM-dd'T'HH:mm:ssxxx");
-
-        const { data, error } = await supabase
-          .from("tb_appointments")
-          .select(
-            `
-          id, 
-          patient_id, 
-          appointment_datetime, 
-          duration_minutes, 
-          notes,
-          tb_patients (id, fullname) 
-        `
-          )
-          .eq("user_id", user.id)
-          .gte("appointment_datetime", startDate)
-          .lte("appointment_datetime", endDate)
-          .order("appointment_datetime", { ascending: true });
-
-        if (error) throw error;
-
-        const formattedAppointments =
-          data?.map((app) => {
-            const patientData = Array.isArray(app.tb_patients)
-              ? app.tb_patients[0]
-              : app.tb_patients;
-            return {
-              ...app,
-              tb_patients: patientData as Patient | undefined,
-            };
-          }) || [];
-
-        setAppointments(formattedAppointments as Appointment[]);
+        const data = await fetchAppointmentsByDate(user.id, date);
+        setAppointments(data);
       } catch (error: unknown) {
         let errorMessage = "Erro desconhecido ao buscar agendamentos";
         if (error instanceof Error) {
@@ -171,14 +120,14 @@ const Agendamento = () => {
   );
 
   useEffect(() => {
-    fetchPatients();
-  }, [fetchPatients]);
+    fetchPatientsData();
+  }, [fetchPatientsData]);
 
   useEffect(() => {
     if (selectedDate) {
-      fetchAppointments(selectedDate);
+      fetchAppointmentsData(selectedDate);
     }
-  }, [selectedDate, fetchAppointments]);
+  }, [selectedDate, fetchAppointmentsData]);
 
   const handleDateSelect = (date?: Date) => {
     setSelectedDate(date);
@@ -194,7 +143,7 @@ const Agendamento = () => {
   const openModalForNew = (time?: string) => {
     resetModalForm();
     if (time) setAppointmentTime(time);
-    if (patients.length > 0) {
+    if (patients.length > 0 && patients[0]?.id) {
       setSelectedPatientId(patients[0].id);
     }
     setIsModalOpen(true);
@@ -220,7 +169,7 @@ const Agendamento = () => {
       return;
     }
     setIsSubmitting(true);
-    const toastId = showLoading("Salvando agendamento...");
+    showSuccess("Salvando agendamento...");
 
     const [hours, minutes] = appointmentTime.split(":").map(Number);
     const appointment_datetime = setMinutes(
@@ -236,23 +185,15 @@ const Agendamento = () => {
     };
 
     try {
-      let error;
       if (currentAppointment.id) {
-        const { error: updateError } = await supabase
-          .from("tb_appointments")
-          .update(appointmentData)
-          .eq("id", currentAppointment.id)
-          .eq("user_id", user.id);
-        error = updateError;
+        await updateAppointment(currentAppointment.id, user.id, {
+          patient_id: appointmentData.patient_id,
+          appointment_datetime: appointmentData.appointment_datetime,
+          notes: appointmentData.notes,
+        });
       } else {
-        const { error: insertError } = await supabase
-          .from("tb_appointments")
-          .insert(appointmentData);
-        error = insertError;
+        await createAppointment(appointmentData);
       }
-
-      dismissToast(toastId);
-      if (error) throw error;
 
       showSuccess(
         `Agendamento ${
@@ -260,9 +201,8 @@ const Agendamento = () => {
         } com sucesso!`
       );
       setIsModalOpen(false);
-      fetchAppointments(selectedDate);
+      if (selectedDate) fetchAppointmentsData(selectedDate);
     } catch (error: unknown) {
-      dismissToast(toastId);
       let errorMessage = "Erro desconhecido ao salvar agendamento";
       if (error instanceof Error) {
         errorMessage = error.message;
@@ -276,19 +216,12 @@ const Agendamento = () => {
   const handleDeleteAppointment = async (appointmentId: string) => {
     if (!user || !confirm("Tem certeza que deseja excluir este agendamento?"))
       return;
-    const toastId = showLoading("Excluindo agendamento...");
+    showSuccess("Excluindo agendamento...");
     try {
-      const { error } = await supabase
-        .from("tb_appointments")
-        .delete()
-        .eq("id", appointmentId)
-        .eq("user_id", user.id);
-      dismissToast(toastId);
-      if (error) throw error;
+      await deleteAppointment(appointmentId, user.id);
       showSuccess("Agendamento excluído com sucesso!");
-      if (selectedDate) fetchAppointments(selectedDate);
+      if (selectedDate) fetchAppointmentsData(selectedDate);
     } catch (error: unknown) {
-      dismissToast(toastId);
       let errorMessage = "Erro desconhecido ao excluir agendamento";
       if (error instanceof Error) {
         errorMessage = error.message;
@@ -297,249 +230,166 @@ const Agendamento = () => {
     }
   };
 
-  const getAppointmentForSlot = (time: string): Appointment | undefined => {
+  const getAppointmentForSlot = (
+    slot: TimeSlotType | string
+  ): Appointment | undefined => {
     if (!selectedDate) return undefined;
+    const time = typeof slot === "string" ? slot : slot.time;
     return appointments.find((app) => {
       const appDateTime = parseISO(app.appointment_datetime);
       return isValid(appDateTime) && format(appDateTime, "HH:mm") === time;
     });
   };
 
-  return (
-    <div className="container mx-auto py-12 px-6">
-      <Button
-        variant="outline"
-        onClick={() => router.push("/dashboard")}
-        className="mb-6"
-      >
-        <ArrowLeft size={18} className="mr-2" /> Voltar para Dashboard
-      </Button>
-      <div className="flex flex-col md:flex-row gap-8">
-        <div className="md:w-1/3">
-          <h2 className="text-2xl font-bold text-psiecode-dark-blue mb-4">
-            Selecione a Data
-          </h2>
-          <Calendar
-            mode="single"
-            selected={selectedDate}
-            onSelect={handleDateSelect}
-            className="rounded-md border shadow"
-            disabled={(date: Date) => date < startOfDay(new Date())}
+  const renderTimeSlots = () => {
+    let currentPeriod = "";
+
+    return timeSlots.map((slot) => {
+      const appointment = getAppointmentForSlot(slot);
+      const showPeriodHeader = slot.period !== currentPeriod;
+      currentPeriod = slot.period;
+
+      return (
+        <React.Fragment key={`slot-${slot.time}`}>
+          {showPeriodHeader && (
+            <div className="col-span-full mt-6 first:mt-0 mb-3">
+              <h3 className="text-md font-semibold text-psiecode-dark-blue flex items-center gap-2 px-4">
+                {periodLabels[slot.period]}
+              </h3>
+              <hr className="my-2 border-gray-100" />
+            </div>
+          )}
+          <TimeSlot
+            slot={slot}
+            appointment={appointment}
+            onEdit={openModalForEdit}
+            onDelete={handleDeleteAppointment}
+            onNew={openModalForNew}
+            hasPatients={patients.length > 0}
           />
-          <Button
-            onClick={() => openModalForNew()}
-            className="w-full mt-4 bg-psiecode-cyan hover:bg-psiecode-light-blue"
-            disabled={isLoadingPatients || patients.length === 0}
-          >
-            <PlusCircle className="mr-2 h-4 w-4" /> Novo Agendamento
-          </Button>
-          {patients.length === 0 && !isLoadingPatients && (
-            <p className="text-sm text-red-600 mt-2">
-              Você precisa cadastrar pacientes antes de criar agendamentos.{" "}
-              <Link href="/pacientes" className="underline">
-                Cadastrar Paciente
-              </Link>
-            </p>
-          )}
-        </div>
+        </React.Fragment>
+      );
+    });
+  };
 
-        <div className="md:w-2/3">
-          <h2 className="text-2xl font-bold text-psiecode-dark-blue mb-4">
-            Horários para{" "}
-            {selectedDate
-              ? format(selectedDate, "dd/MM/yyyy")
-              : "Nenhuma data selecionada"}
-          </h2>
-          {isLoadingAppointments && <p>Carregando agendamentos...</p>}
-          {!isLoadingAppointments && selectedDate && (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-              {timeSlots.map((time) => {
-                const appointment = getAppointmentForSlot(time);
-                return (
-                  <div
-                    key={time}
-                    className={`p-3 rounded-md border text-center transition-all
-                    ${
-                      appointment
-                        ? "bg-psiecode-medium-blue/20 border-psiecode-medium-blue"
-                        : "bg-green-500/10 border-green-500 hover:bg-green-500/20 cursor-pointer"
-                    }`}
-                    onClick={() =>
-                      !appointment &&
-                      patients.length > 0 &&
-                      openModalForNew(time)
-                    }
-                  >
-                    <p className="font-semibold text-lg text-psiecode-dark-blue">
-                      {time}
-                    </p>
-                    {appointment && appointment.tb_patients ? (
-                      <>
-                        <p
-                          className="text-sm text-psiecode-dark-blue truncate"
-                          title={appointment.tb_patients.fullname}
-                        >
-                          {appointment.tb_patients.fullname}
-                        </p>
-                        <div className="mt-1 flex justify-center space-x-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 text-psiecode-dark-blue hover:text-psiecode-cyan"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              openModalForEdit(appointment);
-                            }}
-                          >
-                            <Edit3 size={14} />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 text-red-500 hover:text-red-700"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteAppointment(appointment.id);
-                            }}
-                          >
-                            <Trash2 size={14} />
-                          </Button>
-                        </div>
-                      </>
-                    ) : !appointment ? (
-                      <p className="text-sm text-green-700">Disponível</p>
-                    ) : (
-                      <p className="text-sm text-gray-500">Carregando...</p>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-          {!isLoadingAppointments &&
-            appointments.length === 0 &&
-            timeSlots.every((time) => !getAppointmentForSlot(time)) &&
-            selectedDate && (
-              <p className="text-psiecode-medium-blue mt-4">
-                Nenhum agendamento para este dia.
-              </p>
-            )}
-        </div>
-      </div>
+  return (
+    <TooltipProvider>
+      <div className="min-h-screen bg-gray-50/50">
+        <div className="container mx-auto py-6 px-4">
+          <AppointmentHeader
+            onNewAppointment={() => openModalForNew()}
+            isLoadingPatients={isLoadingPatients}
+            patientsCount={patients.length}
+          />
 
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>
-              {currentAppointment.id
-                ? "Editar Agendamento"
-                : "Novo Agendamento"}
-            </DialogTitle>
-            <DialogDescription>
-              {currentAppointment.id
-                ? "Atualize os detalhes abaixo."
-                : `Preencha os detalhes para o novo agendamento em ${
-                    selectedDate ? format(selectedDate, "dd/MM/yyyy") : ""
-                  } às ${appointmentTime}.`}
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleFormSubmit}>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="patientId" className="text-right col-span-1">
-                  Paciente
-                </Label>
-                <Select
-                  value={selectedPatientId}
-                  onValueChange={setSelectedPatientId}
-                  disabled={isSubmitting || isLoadingPatients}
-                >
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue
-                      placeholder={
-                        isLoadingPatients
-                          ? "Carregando..."
-                          : "Selecione um paciente"
-                      }
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="grid grid-cols-1 md:grid-cols-12 divide-y md:divide-y-0 md:divide-x divide-gray-100">
+              {/* Calendar Column */}
+              <div className="md:col-span-4 lg:col-span-3 p-4">
+                <div className="sticky top-6">
+                  <div className="rounded-lg border border-gray-100 w-full bg-white shadow-sm">
+                    <Calendar
+                      selected={selectedDate}
+                      onSelect={handleDateSelect}
+                      disabled={(date: Date) => date < startOfDay(new Date())}
                     />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {patients.map((p) => (
-                      <SelectItem key={p.id} value={p.id}>
-                        {p.fullname}
-                      </SelectItem>
-                    ))}
-                    {patients.length === 0 && !isLoadingPatients && (
-                      <SelectItem value="no-patients" disabled>
-                        Nenhum paciente cadastrado
-                      </SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
+                  </div>
+
+                  {/* Alert - No Patients */}
+                  {patients.length === 0 && !isLoadingPatients && (
+                    <div className="mt-4 p-3 bg-red-50 border border-red-100 rounded-lg text-center">
+                      <p className="text-sm text-red-600 font-medium">
+                        Você precisa cadastrar pacientes antes de criar
+                        agendamentos.
+                      </p>
+                      <Button
+                        variant="link"
+                        className="h-auto p-0 mt-1 text-red-600 text-sm font-medium"
+                        asChild
+                      >
+                        <Link href="/pacientes">Cadastrar Paciente</Link>
+                      </Button>
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label
-                  htmlFor="appointmentTimeModal"
-                  className="text-right col-span-1"
-                >
-                  Horário
-                </Label>
-                <Input
-                  id="appointmentTimeModal"
-                  type="time"
-                  value={appointmentTime}
-                  onChange={(e) => setAppointmentTime(e.target.value)}
-                  className="col-span-3"
-                  required
-                  disabled={isSubmitting}
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label
-                  htmlFor="notesModal"
-                  className="text-right col-span-1 align-top pt-2"
-                >
-                  Notas
-                </Label>
-                <Textarea
-                  id="notesModal"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  className="col-span-3"
-                  rows={3}
-                  disabled={isSubmitting}
-                />
+
+              {/* Schedule Column */}
+              <div className="md:col-span-8 lg:col-span-9 p-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-medium text-psiecode-dark-blue">
+                    Horários para{" "}
+                    <span className="text-psiecode-cyan">
+                      {selectedDate
+                        ? format(selectedDate, "EEEE, dd 'de' MMMM", {
+                            locale: ptBR,
+                          })
+                        : "Nenhuma data selecionada"}
+                    </span>
+                  </h2>
+                </div>
+
+                {isLoadingAppointments ? (
+                  <div className="flex items-center justify-center h-[calc(100vh-16rem)]">
+                    <div className="animate-spin rounded-full h-8 w-8 border-2 border-psiecode-cyan border-r-transparent"></div>
+                    <p className="ml-3 text-psiecode-medium-blue text-sm">
+                      Carregando horários...
+                    </p>
+                  </div>
+                ) : (
+                  <div className="border border-gray-100 rounded-lg divide-y divide-gray-50 bg-white">
+                    {renderTimeSlots()}
+                  </div>
+                )}
+
+                {!isLoadingAppointments &&
+                  appointments.length === 0 &&
+                  timeSlots.every((slot) => !getAppointmentForSlot(slot)) &&
+                  selectedDate && (
+                    <div className="text-center py-12 text-psiecode-medium-blue">
+                      <CalendarDays
+                        size={40}
+                        className="mx-auto opacity-50 mb-3"
+                      />
+                      <p className="text-base mb-1 font-medium">
+                        Nenhum agendamento para este dia
+                      </p>
+                      <p className="text-sm mb-4 text-gray-500">
+                        Selecione um horário disponível para marcar uma consulta
+                      </p>
+                      <Button
+                        onClick={() => openModalForNew()}
+                        className="bg-psiecode-cyan hover:bg-psiecode-light-blue text-white shadow-sm hover:shadow-md transition-all"
+                        disabled={isLoadingPatients || patients.length === 0}
+                      >
+                        <PlusCircle className="mr-2 h-4 w-4" /> Agendar Consulta
+                      </Button>
+                    </div>
+                  )}
               </div>
             </div>
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsModalOpen(false)}
-                disabled={isSubmitting}
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="submit"
-                className="bg-psiecode-light-blue hover:bg-psiecode-medium-blue"
-                disabled={
-                  isSubmitting || !selectedPatientId || isLoadingPatients
-                }
-              >
-                {isSubmitting
-                  ? currentAppointment.id
-                    ? "Salvando..."
-                    : "Criando..."
-                  : currentAppointment.id
-                  ? "Salvar Alterações"
-                  : "Criar Agendamento"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-    </div>
+          </div>
+        </div>
+
+        <AppointmentModal
+          isOpen={isModalOpen}
+          onOpenChange={setIsModalOpen}
+          currentAppointment={currentAppointment}
+          selectedDate={selectedDate}
+          appointmentTime={appointmentTime}
+          patients={patients}
+          isLoadingPatients={isLoadingPatients}
+          selectedPatientId={selectedPatientId}
+          onPatientSelect={setSelectedPatientId}
+          notes={notes}
+          onNotesChange={setNotes}
+          onTimeChange={setAppointmentTime}
+          isSubmitting={isSubmitting}
+          onSubmit={handleFormSubmit}
+        />
+      </div>
+    </TooltipProvider>
   );
 };
+
 export default Agendamento;
