@@ -11,6 +11,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { Logo } from "@/components/ui/Logo";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -27,12 +28,7 @@ export const Sidebar = () => {
     <div className="flex flex-col w-64 bg-white border-r border-gray-200">
       <div className="flex-1 flex flex-col min-h-0">
         <div className="flex items-center h-16 flex-shrink-0 px-4 border-b border-gray-200">
-          <Link href="/dashboard" className="flex items-center space-x-2">
-            <img src="/logo.svg" alt="Psiecode" className="h-8 w-auto" />
-            <span className="text-xl font-semibold text-psiecode-dark-blue">
-              Psiecode
-            </span>
-          </Link>
+          <Logo variant="primary" size="md" href="/dashboard" />
         </div>
         <nav className="flex-1 px-2 py-4 space-y-1">
           {navigation.map((item) => {

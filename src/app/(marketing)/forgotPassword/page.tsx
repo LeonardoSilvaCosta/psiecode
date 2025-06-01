@@ -1,10 +1,12 @@
+"use client";
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
-import { showError, showSuccess, showLoading, dismissToast } from "@/utils/toast";
+import { showError, showSuccess, showInfo } from "@/utils/toast";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
@@ -15,32 +17,33 @@ const ForgotPassword = () => {
     e.preventDefault();
     setIsLoading(true);
     setMessage("");
-    const toastId = showLoading("Enviando link de reset...");
+    showInfo("Enviando link de reset...");
 
     try {
-      // IMPORTANTE: Você precisa configurar a URL de redirecionamento no painel do Supabase!
-      // Vá em Authentication -> Settings -> URL Configuration -> Redirect URLs
-      // Adicione a URL completa da sua página de reset de senha, por exemplo:
-      // http://localhost:8080/reset-password (para desenvolvimento local)
-      // https://seu-app.com/reset-password (para produção)
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`, // Redireciona para a página de reset
+        redirectTo: `${window.location.origin}/resetPassword`,
       });
-
-      dismissToast(toastId);
 
       if (error) {
         console.error("Erro ao solicitar reset de senha:", error);
-        showError(error.message || "Erro ao enviar link de reset. Verifique o e-mail e tente novamente.");
+        showError(
+          error.message ||
+            "Erro ao enviar link de reset. Verifique o e-mail e tente novamente."
+        );
       } else {
         showSuccess("Link de reset enviado!");
-        setMessage("Se o e-mail estiver cadastrado, um link para resetar sua senha foi enviado para ele. Verifique sua caixa de entrada (e spam).");
-        setEmail(""); // Limpa o campo após o envio
+        setMessage(
+          "Se o e-mail estiver cadastrado, um link para resetar sua senha foi enviado para ele. Verifique sua caixa de entrada (e spam)."
+        );
+        setEmail("");
       }
-    } catch (err: any) {
-      dismissToast(toastId);
+    } catch (err: unknown) {
       console.error("Erro inesperado ao solicitar reset:", err);
-      showError(err.message || "Ocorreu um erro inesperado. Tente novamente.");
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : "Ocorreu um erro inesperado. Tente novamente.";
+      showError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -73,16 +76,14 @@ const ForgotPassword = () => {
               disabled={isLoading}
             />
           </div>
-          
+
           {message && (
-            <div className="text-sm text-green-600 text-center">
-              {message}
-            </div>
+            <div className="text-sm text-green-600 text-center">{message}</div>
           )}
 
           <div>
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-psiecode-light-blue hover:bg-psiecode-medium-blue focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-psiecode-cyan"
               disabled={isLoading}
             >
@@ -91,8 +92,11 @@ const ForgotPassword = () => {
           </div>
         </form>
         <p className="mt-2 text-center text-sm text-gray-600">
-          Lembrou da senha?{' '}
-          <Link to="/login" className="font-medium text-psiecode-light-blue hover:text-psiecode-cyan">
+          Lembrou da senha?{" "}
+          <Link
+            href="/login"
+            className="font-medium text-psiecode-light-blue hover:text-psiecode-cyan"
+          >
             Faça login
           </Link>
         </p>
@@ -100,4 +104,5 @@ const ForgotPassword = () => {
     </div>
   );
 };
+
 export default ForgotPassword;

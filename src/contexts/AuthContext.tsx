@@ -37,10 +37,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     useState<UserSubscription | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingSubscription, setIsLoadingSubscription] = useState(true);
+  const [isClient, setIsClient] = useState(false);
   const router = useRouter();
+
+  // Garantir que estamos no cliente
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   // Efeito para lidar com a sessão e o usuário
   useEffect(() => {
+    if (!isClient) return;
+
     let mounted = true;
 
     const initializeAuth = async () => {
@@ -80,10 +88,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     };
 
     initializeAuth();
-  }, []);
+
+    return () => {
+      mounted = false;
+    };
+  }, [isClient]);
 
   // Efeito para lidar com a assinatura
   useEffect(() => {
+    if (!isClient) return;
+
     let mounted = true;
 
     const fetchSubscription = async () => {
@@ -125,13 +139,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     return () => {
       mounted = false;
     };
-  }, [user]);
+  }, [user, isClient]);
 
   const signOut = async () => {
     try {
       await supabase.auth.signOut();
-      router.push("/");
-      router.refresh();
+      if (typeof window !== "undefined") {
+        router.push("/");
+        router.refresh();
+      }
     } catch (error) {
       console.error("Erro ao fazer logout:", error);
     }

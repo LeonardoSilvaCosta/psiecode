@@ -14,6 +14,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Logo } from "@/components/ui/Logo";
 
 const menuItems = [
   {
@@ -68,9 +69,7 @@ export const Sidebar = () => {
         <div className="flex flex-col h-full">
           {/* Logo/Header */}
           <div className="h-16 flex items-center px-6 border-b border-gray-100">
-            <h1 className="text-xl font-bold text-psiecode-dark-blue">
-              Psiecode
-            </h1>
+            <Logo variant="primary" size="md" href="/dashboard" />
           </div>
 
           {/* Navigation */}
