@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
-import { Sidebar } from "@/components/Sidebar";
+import { ClientLayout } from "@/components/ClientLayout";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -20,10 +20,7 @@ export default function RootLayout({
     <html lang="pt-BR">
       <body className={inter.className}>
         <AuthProvider>
-          <div className="min-h-screen bg-gray-50/50">
-            <Sidebar />
-            <main className="md:pl-64 pt-16 md:pt-0">{children}</main>
-          </div>
+          <ClientLayout>{children}</ClientLayout>
         </AuthProvider>
       </body>
     </html>
