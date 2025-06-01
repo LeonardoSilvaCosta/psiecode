@@ -58,12 +58,12 @@ export const AppointmentModal = ({
 }: AppointmentModalProps) => {
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold text-psiecode-dark-blue">
+          <DialogTitle className="text-lg sm:text-xl font-bold text-psiecode-dark-blue">
             {currentAppointment.id ? "Editar Agendamento" : "Novo Agendamento"}
           </DialogTitle>
-          <DialogDescription className="text-sm text-psiecode-medium-blue">
+          <DialogDescription className="text-xs sm:text-sm text-psiecode-medium-blue">
             {currentAppointment.id
               ? "Atualize os detalhes do agendamento abaixo."
               : `Agende uma nova consulta para ${
@@ -74,8 +74,11 @@ export const AppointmentModal = ({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={onSubmit} className="space-y-5 py-4">
-          <div className="space-y-4">
+        <form
+          onSubmit={onSubmit}
+          className="space-y-4 sm:space-y-5 py-3 sm:py-4"
+        >
+          <div className="space-y-3 sm:space-y-4">
             <div>
               <Label
                 htmlFor="patientId"
@@ -88,7 +91,7 @@ export const AppointmentModal = ({
                 onValueChange={onPatientSelect}
                 disabled={isSubmitting || isLoadingPatients}
               >
-                <SelectTrigger className="mt-1.5 w-full bg-white">
+                <SelectTrigger className="mt-1 sm:mt-1.5 w-full bg-white text-sm sm:text-base">
                   <SelectValue
                     placeholder={
                       isLoadingPatients
@@ -99,12 +102,20 @@ export const AppointmentModal = ({
                 </SelectTrigger>
                 <SelectContent>
                   {patients.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>
+                    <SelectItem
+                      key={p.id}
+                      value={p.id}
+                      className="text-sm sm:text-base"
+                    >
                       {p.fullname}
                     </SelectItem>
                   ))}
                   {patients.length === 0 && !isLoadingPatients && (
-                    <SelectItem value="no-patients" disabled>
+                    <SelectItem
+                      value="no-patients"
+                      disabled
+                      className="text-sm sm:text-base"
+                    >
                       Nenhum paciente cadastrado.
                     </SelectItem>
                   )}
@@ -136,7 +147,7 @@ export const AppointmentModal = ({
                 type="time"
                 value={appointmentTime}
                 onChange={(e) => onTimeChange(e.target.value)}
-                className="mt-1.5 w-full bg-white"
+                className="mt-1 sm:mt-1.5 w-full bg-white text-sm sm:text-base"
                 required
                 disabled={isSubmitting}
               />
@@ -156,26 +167,26 @@ export const AppointmentModal = ({
                 id="notesModal"
                 value={notes}
                 onChange={(e) => onNotesChange(e.target.value)}
-                className="mt-1.5 w-full bg-white min-h-[100px]"
+                className="mt-1 sm:mt-1.5 w-full bg-white min-h-[80px] sm:min-h-[100px] text-sm sm:text-base"
                 placeholder="Adicione observações relevantes sobre a consulta..."
                 disabled={isSubmitting}
               />
             </div>
           </div>
 
-          <DialogFooter className="gap-2 sm:gap-0">
+          <DialogFooter className="gap-2 sm:gap-0 pt-2 sm:pt-3">
             <Button
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
               disabled={isSubmitting}
-              className="flex-1 sm:flex-none"
+              className="flex-1 sm:flex-none text-sm sm:text-base"
             >
               Cancelar
             </Button>
             <Button
               type="submit"
-              className="bg-psiecode-cyan hover:bg-psiecode-light-blue text-white shadow-sm hover:shadow-md transition-all flex-1 sm:flex-none min-w-[140px]"
+              className="bg-psiecode-cyan hover:bg-psiecode-light-blue text-white shadow-sm hover:shadow-md transition-all flex-1 sm:flex-none min-w-[120px] sm:min-w-[140px] text-sm sm:text-base"
               disabled={isSubmitting || !selectedPatientId || isLoadingPatients}
             >
               {isSubmitting ? (

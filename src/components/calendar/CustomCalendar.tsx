@@ -57,17 +57,17 @@ export const CustomCalendar = ({
   };
 
   return (
-    <div className="p-3">
+    <div className="p-2 sm:p-3">
       {/* Header with month and navigation */}
-      <div className="relative flex items-center justify-center mb-4">
+      <div className="relative flex items-center justify-center mb-3 sm:mb-4">
         <button
           onClick={handlePreviousMonth}
           className="absolute left-0 p-1 text-psiecode-medium-blue hover:text-psiecode-dark-blue transition-colors"
           type="button"
         >
-          <ChevronLeft className="h-5 w-5" />
+          <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
         </button>
-        <h2 className="text-base font-medium text-psiecode-dark-blue">
+        <h2 className="text-sm sm:text-base font-medium text-psiecode-dark-blue">
           {format(currentMonth, "MMMM yyyy", { locale: ptBR })}
         </h2>
         <button
@@ -75,7 +75,7 @@ export const CustomCalendar = ({
           className="absolute right-0 p-1 text-psiecode-medium-blue hover:text-psiecode-dark-blue transition-colors"
           type="button"
         >
-          <ChevronRight className="h-5 w-5" />
+          <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
         </button>
       </div>
 
@@ -85,7 +85,7 @@ export const CustomCalendar = ({
         {WEEKDAYS.map((day) => (
           <div
             key={day}
-            className="bg-white p-2 text-[11px] font-medium text-psiecode-medium-blue text-center uppercase"
+            className="bg-white p-1.5 sm:p-2 text-[10px] sm:text-[11px] font-medium text-psiecode-medium-blue text-center uppercase"
           >
             {day}
           </div>
@@ -97,7 +97,7 @@ export const CustomCalendar = ({
             return (
               <div
                 key={`empty-${idx}`}
-                className="bg-white aspect-square p-1"
+                className="bg-white aspect-square p-0.5 sm:p-1"
               />
             );
           }
@@ -113,7 +113,7 @@ export const CustomCalendar = ({
               onClick={() => !isDisabled && onSelect(date)}
               disabled={isDisabled}
               className={`
-                bg-white aspect-square p-1 relative group
+                bg-white aspect-square p-0.5 sm:p-1 relative group
                 ${
                   isDisabled
                     ? "cursor-not-allowed"
@@ -131,7 +131,7 @@ export const CustomCalendar = ({
               <time
                 dateTime={format(date, "yyyy-MM-dd")}
                 className={`
-                  flex items-center justify-center w-full h-full text-sm rounded-full
+                  flex items-center justify-center w-full h-full text-xs sm:text-sm rounded-full
                   ${
                     isSelected
                       ? "bg-psiecode-cyan text-white font-semibold shadow-sm"

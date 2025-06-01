@@ -6,14 +6,13 @@ import { showError, showSuccess } from "@/utils/toast";
 import {
   format,
   startOfDay,
-  endOfDay,
   setHours,
   setMinutes,
   parseISO,
   isValid,
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarDays, PlusCircle } from "lucide-react";
+import { CalendarDays, PlusCircle, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Link from "next/link";
@@ -275,7 +274,21 @@ const Agendamento = () => {
   return (
     <TooltipProvider>
       <div className="min-h-screen bg-gray-50/50">
-        <div className="container mx-auto py-6 px-4">
+        <div className="container mx-auto py-4 sm:py-6 px-3 sm:px-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-4 sm:mb-6">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-psiecode-medium-blue hover:text-psiecode-dark-blue self-start"
+              asChild
+            >
+              <Link href="/dashboard">
+                <ArrowLeft className="h-5 w-5" />
+                <span className="ml-2">Voltar</span>
+              </Link>
+            </Button>
+          </div>
+
           <AppointmentHeader
             onNewAppointment={() => openModalForNew()}
             isLoadingPatients={isLoadingPatients}
@@ -285,8 +298,8 @@ const Agendamento = () => {
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="grid grid-cols-1 md:grid-cols-12 divide-y md:divide-y-0 md:divide-x divide-gray-100">
               {/* Calendar Column */}
-              <div className="md:col-span-4 lg:col-span-3 p-4">
-                <div className="sticky top-6">
+              <div className="md:col-span-4 lg:col-span-3 p-3 sm:p-4">
+                <div className="md:sticky md:top-6">
                   <div className="rounded-lg border border-gray-100 w-full bg-white shadow-sm">
                     <Calendar
                       selected={selectedDate}
@@ -315,11 +328,11 @@ const Agendamento = () => {
               </div>
 
               {/* Schedule Column */}
-              <div className="md:col-span-8 lg:col-span-9 p-4">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-medium text-psiecode-dark-blue">
+              <div className="md:col-span-8 lg:col-span-9 p-3 sm:p-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+                  <h2 className="text-base sm:text-lg font-medium text-psiecode-dark-blue">
                     Horários para{" "}
-                    <span className="text-psiecode-cyan">
+                    <span className="text-psiecode-cyan block sm:inline mt-1 sm:mt-0">
                       {selectedDate
                         ? format(selectedDate, "EEEE, dd 'de' MMMM", {
                             locale: ptBR,
@@ -330,14 +343,14 @@ const Agendamento = () => {
                 </div>
 
                 {isLoadingAppointments ? (
-                  <div className="flex items-center justify-center h-[calc(100vh-16rem)]">
+                  <div className="flex items-center justify-center min-h-[300px] sm:min-h-[400px] md:min-h-[calc(100vh-16rem)]">
                     <div className="animate-spin rounded-full h-8 w-8 border-2 border-psiecode-cyan border-r-transparent"></div>
                     <p className="ml-3 text-psiecode-medium-blue text-sm">
                       Carregando horários...
                     </p>
                   </div>
                 ) : (
-                  <div className="border border-gray-100 rounded-lg divide-y divide-gray-50 bg-white">
+                  <div className="border border-gray-100 rounded-lg divide-y divide-gray-50 bg-white overflow-x-auto">
                     {renderTimeSlots()}
                   </div>
                 )}
@@ -346,20 +359,20 @@ const Agendamento = () => {
                   appointments.length === 0 &&
                   timeSlots.every((slot) => !getAppointmentForSlot(slot)) &&
                   selectedDate && (
-                    <div className="text-center py-12 text-psiecode-medium-blue">
+                    <div className="text-center py-8 sm:py-12 text-psiecode-medium-blue">
                       <CalendarDays
-                        size={40}
+                        size={32}
                         className="mx-auto opacity-50 mb-3"
                       />
-                      <p className="text-base mb-1 font-medium">
+                      <p className="text-sm sm:text-base mb-1 font-medium">
                         Nenhum agendamento para este dia
                       </p>
-                      <p className="text-sm mb-4 text-gray-500">
+                      <p className="text-xs sm:text-sm mb-4 text-gray-500">
                         Selecione um horário disponível para marcar uma consulta
                       </p>
                       <Button
                         onClick={() => openModalForNew()}
-                        className="bg-psiecode-cyan hover:bg-psiecode-light-blue text-white shadow-sm hover:shadow-md transition-all"
+                        className="bg-psiecode-cyan hover:bg-psiecode-light-blue text-white shadow-sm hover:shadow-md transition-all text-sm sm:text-base"
                         disabled={isLoadingPatients || patients.length === 0}
                       >
                         <PlusCircle className="mr-2 h-4 w-4" /> Agendar Consulta
