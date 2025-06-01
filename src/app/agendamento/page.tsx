@@ -12,7 +12,7 @@ import {
   isValid,
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarDays, PlusCircle, ArrowLeft } from "lucide-react";
+import { CalendarDays, PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Link from "next/link";
@@ -20,6 +20,7 @@ import { CustomCalendar as Calendar } from "@/components/calendar/CustomCalendar
 import { AppointmentModal } from "@/components/appointments/AppointmentModal";
 import { TimeSlot } from "@/components/appointments/TimeSlot";
 import { AppointmentHeader } from "@/components/appointments/AppointmentHeader";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
 import type {
   TimeSlot as TimeSlotType,
   PeriodLabels,
@@ -275,19 +276,7 @@ const Agendamento = () => {
     <TooltipProvider>
       <div className="min-h-screen bg-gray-50/50">
         <div className="container mx-auto py-4 sm:py-6 px-3 sm:px-4">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-4 sm:mb-6">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-psiecode-medium-blue hover:text-psiecode-dark-blue self-start"
-              asChild
-            >
-              <Link href="/dashboard">
-                <ArrowLeft className="h-5 w-5" />
-                <span className="ml-2">Voltar</span>
-              </Link>
-            </Button>
-          </div>
+          <Breadcrumb items={[{ label: "Agendamento" }]} />
 
           <AppointmentHeader
             onNewAppointment={() => openModalForNew()}

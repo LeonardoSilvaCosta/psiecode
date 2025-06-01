@@ -9,7 +9,6 @@ import {
   Trash2,
   User,
   FileText,
-  ArrowLeft,
   Download,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -50,6 +49,7 @@ import {
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
 
 interface Patient {
   id: string;
@@ -328,13 +328,7 @@ const Pacientes = () => {
 
   return (
     <div className="container mx-auto py-12 px-6">
-      <Button
-        variant="outline"
-        onClick={() => router.push("/dashboard")}
-        className="mb-6"
-      >
-        <ArrowLeft size={18} className="mr-2" /> Voltar para Dashboard
-      </Button>
+      <Breadcrumb items={[{ label: "Pacientes" }]} />
       <div className="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
         <h1 className="text-3xl md:text-4xl font-bold text-psiecode-dark-blue">
           Meus Pacientes

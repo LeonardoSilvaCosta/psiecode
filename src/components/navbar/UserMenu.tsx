@@ -15,7 +15,7 @@ import { LayoutDashboard, Settings, LogOut } from "lucide-react";
 import { User } from "@supabase/supabase-js";
 
 interface UserMenuProps {
-  user: User;
+  user: User | null;
   userDisplayName: string;
   userAvatarUrl?: string;
   userFallbackName: string;
@@ -29,6 +29,8 @@ export const UserMenu = ({
   userFallbackName,
   onSignOut,
 }: UserMenuProps) => {
+  if (!user) return null;
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
